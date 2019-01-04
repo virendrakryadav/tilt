@@ -19,7 +19,6 @@ type DockerComposeClient interface {
 	StreamLogs(ctx context.Context, configPath, serviceName string) (io.ReadCloser, error)
 	StreamEvents(ctx context.Context, configPath string) (<-chan string, error)
 	Config(ctx context.Context, configPath string) (string, error)
-	Services(ctx context.Context, configPath string) (string, error)
 }
 
 type cmdDCClient struct{}
@@ -116,10 +115,6 @@ func (c *cmdDCClient) StreamEvents(ctx context.Context, configPath string) (<-ch
 
 func (c *cmdDCClient) Config(ctx context.Context, configPath string) (string, error) {
 	return dcOutput(ctx, configPath, "config")
-}
-
-func (c *cmdDCClient) Services(ctx context.Context, configPath string) (string, error) {
-	return dcOutput(ctx, configPath, "config", "--services")
 }
 
 func dcOutput(ctx context.Context, configPath string, args ...string) (string, error) {

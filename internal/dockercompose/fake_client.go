@@ -69,10 +69,6 @@ func (c *FakeDCClient) Config(ctx context.Context, pathToConfig string) (string,
 	return "", nil
 }
 
-func (c *FakeDCClient) Services(ctx context.Context, pathToConfig string) (string, error) {
-	return "", nil
-}
-
 func (c *FakeDCClient) SetLogOutput(output string) {
 	c.logOutput = output
 }

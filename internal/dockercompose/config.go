@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/windmilleng/tilt/internal/dockerfile"
@@ -75,54 +74,33 @@ type Service struct {
 	DfContents    []byte
 }
 
-func (c Config) GetService(name string) (Service, error) {
-	svcConfig, ok := c.Services[name]
-	if !ok {
-		return Service{}, fmt.Errorf("no service %s found in config", name)
-	}
-
-	df := svcConfig.Build.Dockerfile
-	if df == "" && svcConfig.Build.Context != "" {
-		// We only expect a Dockerfile if there's a build context specified.
-		df = "Dockerfile"
-	}
-
-	dfPath := filepath.Join(svcConfig.Build.Context, df)
-	svc := Service{
-		Name:          name,
-		Context:       svcConfig.Build.Context,
-		DfPath:        dfPath,
-		ServiceConfig: svcConfig.RawYAML,
-	}
-
-	if dfPath != "" {
-		dfContents, err := ioutil.ReadFile(dfPath)
-		if err != nil {
-			return svc, err
+func (c Config) services() ([]Service, error) {
+	var services []Service
+	for name, svcConfig := range c.Services {
+		df := svcConfig.Build.Dockerfile
+		if df == "" && svcConfig.Build.Context != "" {
+			// We only expect a Dockerfile if there's a build context specified.
+			df = "Dockerfile"
 		}
-		svc.DfContents = dfContents
-	}
-	return svc, nil
-}
 
-func svcNames(ctx context.Context, dcc DockerComposeClient, configPath string) ([]string, error) {
-	servicesText, err := dcc.Services(ctx, configPath)
-	if err != nil {
-		return nil, err
-	}
-
-	serviceNames := strings.Split(servicesText, "\n")
-
-	var result []string
-
-	for _, name := range serviceNames {
-		if name == "" {
-			continue
+		dfPath := filepath.Join(svcConfig.Build.Context, df)
+		svc := Service{
+			Name:          name,
+			Context:       svcConfig.Build.Context,
+			DfPath:        dfPath,
+			ServiceConfig: svcConfig.RawYAML,
 		}
-		result = append(result, name)
-	}
 
-	return result, nil
+		if dfPath != "" {
+			dfContents, err := ioutil.ReadFile(dfPath)
+			if err != nil {
+				return nil, err
+			}
+			svc.DfContents = dfContents
+		}
+		services = append(services, svc)
+	}
+	return services, nil
 }
 
 func ParseConfig(ctx context.Context, configPath string) ([]Service, error) {
@@ -138,19 +116,9 @@ func ParseConfig(ctx context.Context, configPath string) ([]Service, error) {
 		return nil, err
 	}
 
-	svcNames, err := svcNames(ctx, dcc, configPath)
+	services, err := config.services()
 	if err != nil {
-		return nil, err
-	}
-
-	var services []Service
-
-	for _, name := range svcNames {
-		svc, err := config.GetService(name)
-		if err != nil {
-			return nil, errors.Wrapf(err, "getting service %s", name)
-		}
-		services = append(services, svc)
+		return nil, errors.Wrapf(err, "getting services from docker-compose config %s", configPath)
 	}
 
 	return services, nil

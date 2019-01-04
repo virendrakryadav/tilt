@@ -12,7 +12,9 @@ import (
 type FakeDCClient struct {
 	t *testing.T
 
-	logOutput string
+	logOutput    string
+	configOutput string
+
 	eventJson chan string
 }
 
@@ -66,7 +68,7 @@ func (c *FakeDCClient) SendEvent(evt Event) error {
 }
 
 func (c *FakeDCClient) Config(ctx context.Context, pathToConfig string) (string, error) {
-	return "", nil
+	return c.configOutput, nil
 }
 
 func (c *FakeDCClient) SetLogOutput(output string) {

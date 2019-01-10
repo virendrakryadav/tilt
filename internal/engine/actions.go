@@ -65,13 +65,13 @@ type LogAction struct {
 func (LogAction) Action() {}
 
 type BuildCompleteAction struct {
-	Result store.BuildResult
+	Result store.BuildResultSet
 	Error  error
 }
 
 func (BuildCompleteAction) Action() {}
 
-func NewBuildCompleteAction(result store.BuildResult, err error) BuildCompleteAction {
+func NewBuildCompleteAction(result store.BuildResultSet, err error) BuildCompleteAction {
 	return BuildCompleteAction{
 		Result: result,
 		Error:  err,
@@ -103,7 +103,7 @@ type ManifestReloadedAction struct {
 func (ManifestReloadedAction) Action() {}
 
 type BuildStartedAction struct {
-	Manifest     model.Manifest
+	ManifestName model.ManifestName
 	StartTime    time.Time
 	FilesChanged []string
 	Reason       model.BuildReason
